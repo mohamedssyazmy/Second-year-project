@@ -1,0 +1,94 @@
+#include <SoftwareSerial.h>
+#include <DHT.h>
+#define DHTPIN 2        // The Pin where the DHT11 is connected
+#define DHTTYPE DHT11   // DHT 11
+SoftwareSerial B(0,1); // 0-RX,  1,TX
+DHT dht(DHTPIN, DHTTYPE);
+// Define the analog pins where the sensors are connected
+const int moistureSensorPin = A0;
+
+
+// Define the digital pins for the LEDs
+const int moistureLedPinGreen = 13;
+const int moistureLedPinBlue = 8;
+
+// Define the pin connected to the relay module
+const int relayPin = 7;
+int buzzerPin = 9;
+
+// Define the moisture  
+const int moistureThreshold = 500;
+const int lightThreshold = 300;
+const int TempPin = 4;
+
+void setup() {
+ 
+  // Start serial communication
+  Serial.begin(9600);
+  B.begin(9600);
+  pinMode(relayPin, OUTPUT);
+
+  // Set the LED pins as outputs
+  pinMode(moistureLedPinGreen, OUTPUT);
+  pinMode(moistureLedPinBlue, OUTPUT);
+  pinMode(TempPin, OUTPUT);
+  // Set the buzzer pin as an OUTPUT
+  pinMode(buzzerPin, OUTPUT);
+  dht.begin();
+
+}
+
+void loop() {
+  // Read the analog value from the moisture sensor
+  int moistureValue = analogRead(moistureSensorPin);
+
+
+  // Map the analog values to moisture percentage 
+  int moisturePercentage = map(moistureValue, 0, 1023, 0, 100);
+
+
+  // Print the sensor values to the serial monitor
+  Serial.print("Moisture Value: ");
+  Serial.print(moistureValue);
+  Serial.print("\tMoisture Percentage: ");
+  Serial.print(moisturePercentage);
+  Serial.print("%\t");
+  float T = dht.readTemperature();
+  if (!isnan(T)) {
+    // Print temperature to serial monitor
+    Serial.print("Temperature: ");
+    Serial.print(T);
+    Serial.println(" °C");
+
+    // Check if temperature is more than 
+    if (T < 30.0) {
+      // Turn on the Fan
+      digitalWrite(TempPin, HIGH);
+      Serial.println("Temperature is less than 30°C - Fan off!");
+    } else {
+      // Turn off the Fan
+      digitalWrite(TempPin, LOW);
+    }
+ 
+
+  // Check if moisture value is below the threshold
+  if (moistureValue < moistureThreshold) {
+    // Turn on the moisture LED
+    digitalWrite(relayPin, HIGH);
+    tone(buzzerPin, 1000);
+    digitalWrite(moistureLedPinGreen, LOW);
+    digitalWrite(moistureLedPinBlue, HIGH);
+  } else {
+    // Turn off the moisture LED
+    digitalWrite(relayPin, LOW);
+    noTone(buzzerPin);
+    digitalWrite(moistureLedPinBlue, LOW);
+    digitalWrite(moistureLedPinGreen, HIGH);
+    ;}
+
+
+
+  }
+
+
+}
